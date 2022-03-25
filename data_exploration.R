@@ -1,3 +1,5 @@
+library(ggplot2)
+
 # Basic data analysis ----
 # Count number of customers who do and don't churn
 telco_data %>%

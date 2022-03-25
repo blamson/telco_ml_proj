@@ -57,6 +57,10 @@ The final estimate of performance for a model is the average of all of the model
 
 ![](images/resampling.png)
 
+### Cross-Validation
+
+Most common is **V-fold cross-validation**. The data are randomly partitioned into $V$ sets of roughly equal size. 
+
 # Hyperlinks
 
 ***
