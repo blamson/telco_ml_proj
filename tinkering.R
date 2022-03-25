@@ -1,4 +1,3 @@
-library(ggplot2)    # Plotting
 library(dplyr)      # For all general data work
 library(tidymodels) # For everything models
 library(yardstick)  # For model performance evaluation
@@ -11,41 +10,7 @@ tidymodels_prefer() # To prefer tidymodels functions given conflicts
 # Read in data ----
 telco_data <- readr::read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
-# Basic data analysis ----
-# Count number of customers who do and don't churn
-telco_data %>%
-    dplyr::group_by(Churn) %>%
-    dplyr::summarise(
-        count = n(),
-        percent = n() / nrow(telco_data) * 100
-    )
-
-# Initial note: What we can see here is that only around a quarter of the customers in this data set churn.
-# This is important, as certain metrics become less useful due to this. Accuracy, for instance,
-# isn't particularly helpful for determining if we're capturing all of the customers that do churn
-# as that number will be outweighed by the number of those who don't. 
-# I'll need to be careful about which metrics to prioritize maximizing. 
-
-# Update note: Note that this can be potentially side-stepped with the themis package which can help
-# account for unbalanced data. I'll be utilizing that in this model.
-
-telco_data %>%
-    ggplot(aes(x = MonthlyCharges)) +
-    geom_histogram(bins = 30, color = "white")
-
-telco_data %>%
-    ggplot(aes(x = TotalCharges)) +
-    geom_histogram(bins = 30, color = "white")
-
-telco_data %>%
-    ggplot(aes(x = tenure)) +
-    geom_histogram(bins = 30, color = "white")
-
-    
-# From the plots we can see very non-normal distributions for both types of charges.
-# We'll want to log transform this data to more easily allow our model to work on it.
-
-# Set seed for reproducibility ----
+# Set initial seed for reproducibility ----
 set.seed(500)
 
 # Split data ----
@@ -84,23 +49,30 @@ telco_bstraps <-
     )
 
 # Prediction on each of the 5 samples ----
+my_metrics <- metric_set(accuracy, sensitivity, specificity, precision, recall, npv, ppv, f_meas, roc_auc)
+
 telco_resamples_init <-
     telco_workflow_init %>%
     fit_resamples(
         resamples = telco_bstraps,
         # List off metrics I'm interested in capturing
-        metrics = metric_set(accuracy, sensitivity, specificity, precision, recall, npv, ppv, f_meas),
+        metrics = my_metrics,
         # Save predictions for confusion matrix
         control = control_resamples(save_pred = TRUE)
     )
 
 # Overall metrics for the samples ----
-telco_resamples_init %>%
+init_metrics <-
+    telco_resamples_init %>%
     collect_metrics()
 
 # Confusion matrix for re-samples ----
-telco_resamples_init %>%
+init_matrix <-
+    telco_resamples_init %>%
     conf_mat_resampled()
+
+init_metrics
+init_matrix
 
 # Based on the metrics and matrix above, we have a big problem with the initial model. The most important metric
 # for this problem is identifying customers who churn, which, according to specificity, is horrible. 
@@ -115,7 +87,7 @@ telco_recipe_updated <-
     update_role(customerID, new_role = "id") %>%
     step_mutate(SeniorCitizen = as.factor(SeniorCitizen)) %>%
     step_naomit(everything(), skip = TRUE) %>%
-    step_log(tenure, MonthlyCharges, TotalCharges) %>%        # log transform skewed numeric variables
+    step_log(tenure, MonthlyCharges, TotalCharges) %>%        # log transform non-normal numeric variables
     step_normalize(tenure, MonthlyCharges, TotalCharges) %>%  # z-standardize all numeric variables
     step_dummy(all_nominal_predictors()) %>%
     step_corr(all_numeric_predictors(), threshold = 0.7) %>%  # Remove highly correlated variables
@@ -132,17 +104,19 @@ telco_resamples_updated <-
     fit_resamples(
         resamples = telco_bstraps,
         # List off metrics I'm interested in capturing
-        metrics = metric_set(accuracy, sensitivity, specificity, precision, recall, npv, ppv, f_meas),
+        metrics = my_metrics,
         # Save predictions for confusion matrix
         control = control_resamples(save_pred = TRUE)
     )
 
 # Overall metrics for the samples ----
-telco_resamples_updated %>%
+bootstrap_2_metrics <-
+    telco_resamples_updated %>%
     collect_metrics()
 
 # Confusion matrix for re-samples ----
-telco_resamples_updated %>%
+bootstrap_2_matrix <- 
+    telco_resamples_updated %>%
     conf_mat_resampled()
 
 # Updating the recipe to better handle some of the quirks of the data set helps and hurts us a bit. 
@@ -152,3 +126,28 @@ telco_resamples_updated %>%
 # churn, which by the nature of that approach captures more of those that do. The issue is that we also
 # capture many customers that don't. Within the 'yes' prediction, it's a near 50/50 split on whether the guess
 # was correct or not. This should be improved. 
+
+# Attempt 2 but this time with cross-validation ---------------------------------------------------
+# Here we'll use most of the work from attempt #2 but use cross validation to test effectiveness instead of bootstrapping
+
+# I'll be using v-fold cross validation
+telco_folds <- vfold_cv(telco_train, v = 10)
+keep_pred <- control_resamples(save_pred = TRUE, save_workflow = TRUE)
+cv_attempt_2_res <- 
+    telco_workflow_updated %>%
+    fit_resamples(
+        resamples = telco_folds, 
+        control = keep_pred,
+        metrics = my_metrics
+    )
+
+cv_2_metrics <-
+    cv_attempt_2_res %>%
+    collect_metrics()
+
+cv_2_matrix <-
+    cv_attempt_2_res %>%
+    conf_mat_resampled()
+
+# Cross-validation and bootstrapping both show roughly equivalent metrics.
+
