@@ -78,3 +78,5 @@ Most common is **V-fold cross-validation**. The data are randomly partitioned in
 [Classification model guide](https://www.kirenz.com/post/2021-02-17-r-classification-tidymodels/)
 
 [Themis package for unbalanced data](https://themis.tidymodels.org/index.html)
+
+[Tidymodels Tuning Chapter](https://www.tidymodels.org/start/tuning/)

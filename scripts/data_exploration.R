@@ -1,5 +1,13 @@
 library(ggplot2)
 
+# First we want to check out the data
+skimr::skim(telco_data)
+
+# We can see from this that only one column has missing values, TotalCharges. This will be important for the random
+# forest method, as that requires some pre-processing strategies to handle NA's such as statistical imputation.
+# The little histograms in the output also show a non-normal distribution for all of our numeric data
+# We'll look at that more closely with the plots below. 
+
 # Basic data analysis ----
 # Count number of customers who do and don't churn
 telco_data %>%

@@ -1,17 +1,10 @@
-library(dplyr)      # For all general data work
-library(tidymodels) # For everything models
-library(yardstick)  # For model performance evaluation
-library(rsample)    # For bootstrapping and sampling purposes
-library(parsnip)    # For a standardized modeling interface
-library(themis)     # To handle unbalanced data
-
-tidymodels_prefer() # To prefer tidymodels functions given conflicts
+load_libraries()
 
 # Read in data ----
 telco_data <- readr::read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
 # Set initial seed for reproducibility ----
-set.seed(500)
+set.seed(seed)
 
 # Split data ----
 # Strata is set to churn due to the disproportionate nature of the variable. 75% No, 25% Yes.
