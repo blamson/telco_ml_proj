@@ -4,7 +4,7 @@ load_libraries()
 telco_data <- readr::read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
 # Set initial seed for reproducibility ----
-set.seed(seed)
+set.seed(500)
 
 # Split data ----
 # Strata is set to churn due to the disproportionate nature of the variable. 75% No, 25% Yes.
