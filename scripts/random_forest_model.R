@@ -28,7 +28,7 @@ rf_recipe <-
     step_impute_mean(TotalCharges)                            # Use statistical imputation to handle missing values
     
 rf_model <- 
-    rand_forest(trees = 1000) %>%
+    rand_forest(trees = 100) %>%
     set_engine("ranger") %>%
     set_mode("classification")
 
@@ -120,13 +120,16 @@ final_fit <-
     last_fit(telco_split)
 
 # Show collected metrics for the final fit
+sink(file = "rf_res.txt")
 final_fit %>%
     collect_metrics()
+sink(file = NULL)
 
 # Show predictions from the final fit
 final_fit %>%
     collect_predictions() %>%
     head()
+
 
 # Create an ROC curve for our final fit
 final_fit %>%

@@ -142,5 +142,10 @@ cv_2_matrix <-
     cv_attempt_2_res %>%
     conf_mat_resampled()
 
+cv_attempt_2_res %>%
+    collect_predictions() %>%
+    roc_curve(Churn, .pred_No) %>%
+    autoplot()
+
 # Cross-validation and bootstrapping both show roughly equivalent metrics.
 

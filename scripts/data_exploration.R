@@ -38,6 +38,20 @@ telco_data %>%
     ggplot(aes(x = tenure)) +
     geom_histogram(bins = 30, color = "white")
 
+telco_data %>%
+    filter(Churn == "Yes") %>%
+    ggplot(aes(x = tenure)) +
+    geom_histogram(bins = 20, color = "white")
+
+telco_data %>%
+    filter(Churn == "Yes") %>%
+    ggplot(aes(x = MonthlyCharges)) +
+    geom_histogram(bins = 20, color = "white")
+
+telco_data %>%
+    filter(Churn == "Yes") %>%
+    ggplot(aes(x = TotalCharges)) +
+    geom_histogram(bins = 20, color = "white")
 
 # From the plots we can see very non-normal distributions for both types of charges.
 # We'll want to log transform this data to more easily allow our model to work on it.
