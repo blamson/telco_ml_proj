@@ -435,3 +435,23 @@ In retrospect I wish I had spent more time with data analysis. I really wanted t
 I also wonder if I picked the appropriate metric to maximize. My gut tells me that specificity, the true negative rate, is the useful metric here. Which customers churn is the valuable information, and that's what this measures here. I could never quite get past the models aggressive 'yes' guessing though when I worked on the logistic model. I have to wonder what I could have done differently to make it just a little bit pickier. 
 
 Overall though I feel satisfied and proud of what I was able to accomplish in the short time span of one week. This has demystified the concept of machine learning to me and I'm excited to learn more. Apparently neural networks could be a possible solution to a problem such as this and I would be excited to give that a go someday. I also still need to explore DALEX and DALEXtra, I simply had to cut that due to time constraints. There is still so much more for me to explore and I'm looking forward to it. 
+
+# Resources Used
+
+***
+
+[Tidy Modeling with R](https://www.tmwr.org/)
+
+[Modern Data Science with R](https://mdsr-book.github.io/mdsr2e/ch-modeling.html)
+
+[Precision vs. Recall](https://www.analyticsvidhya.com/blog/2020/09/precision-recall-machine-learning/)
+
+[Bias and Variance](https://www.analyticsvidhya.com/blog/2020/08/bias-and-variance-tradeoff-machine-learning/?utm_source=blog&utm_medium=precision_and_recall)
+
+[Metrics of Classification Models](https://medium.com/analytics-vidhya/how-to-select-performance-metrics-for-classification-models-c847fe6b1ea3)
+
+[Classification model guide](https://www.kirenz.com/post/2021-02-17-r-classification-tidymodels/)
+
+[Themis package for unbalanced data](https://themis.tidymodels.org/index.html)
+
+[Tidymodels Tuning Chapter](https://www.tidymodels.org/start/tuning/)
