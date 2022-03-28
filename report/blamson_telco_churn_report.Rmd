@@ -31,7 +31,7 @@ Before we get started it's important that we read in and understand the data set
 
 ```{r}
 telco_data <- 
-    readr::read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv") %>%
+    readr::read_csv("../data/WA_Fn-UseC_-Telco-Customer-Churn.csv") %>%
     mutate(Churn = as.factor(Churn))
 
 telco_data %>% skimr::skim()
@@ -74,7 +74,7 @@ telco_data %>%
 
 From here we can certainly confirm our suspicions. Vastly different scales and nothing approaching normality. I'll be using two techniques to circumvent this issue, **log transformations** and **normalization**. This will make the data a lot friendlier to work with for our logistic regression model but will not be necessary for the random forest model. 
 
-There's one other thing we can look at as well. What is the frequency of customers who churn based on the numeric variables? For instance, based on monthy charges is there a higher frequency of customer churn at a specific value? Let's find out. 
+There's one other thing we can look at as well. What is the frequency of customers who churn based on the numeric variables? For instance, based on monthly charges is there a higher frequency of customer churn at a specific value? Let's find out. This is actually something I didn't look at until far later in the projects life. It simply did not occur to me to check when it seems so obvious in retrospect. It paints a very important picture.
 
 ```{r, out.width="70%"}
 telco_data %>%
@@ -93,7 +93,7 @@ telco_data %>%
     geom_histogram(bins = 20, color = "white")
 ```
 
-There are some big conclusions we can draw from this. Customers with less tenure are more likely to leave, which should be unsurprising. People who have stuck around will continue to stick around. We also see higher values of monthly charges resulting in higher frequencies of customer churn. It's possible there is some break point in monthly payments where customers are no longer willing to continue service. Lastly, customers who have spent less total on telco's services are more likely to leave. This is similar to tenure. I would expect these three to be good predictors of churn as they seem intuitively useful.
+There are some big conclusions we can draw from this. Customers with less tenure discontinue service at a higher frequency. This is unsurprising to me, people who have stuck around will continue to stick around. Seeing it reflected in the data to such a degree is very important though. We also see that customers who pay more per month tend to discontinue service at a higher frequency. It's possible there is some break point in monthly payments where customers are no longer willing to continue service. This is a possibility I was, unfortunately, unable to explore. Lastly, customers who have spent less total on telco's services are more likely to discontinue. This is similar to tenure. I would expect these three to be good predictors of churn as they seem intuitively useful. Catching this earlier in the projects life would have been invaluable.
 
 Now that we've seen the basic overview of our data we can begin tackling our first model. Actually, not quite. It's easy to forget but making models is pointless without a reference point. We need a **null model**. 
 
@@ -218,29 +218,31 @@ log_reg_resamples <-
 # Overall metrics for the samples ----
 log_reg_resamples %>%
     collect_metrics()
-
-# Confusion matrix for re-samples ----
-log_reg_resamples %>%
-    conf_mat_resampled()
 ```
 
 We get a bunch of metrics here, each of them are important to understand. We also need to understand these with respect to the null hypotheses.
 
 - **Null Hypotheses:** The customer does NOT churn. True positive is a correct guess that the customer does not churn. True negative is a correct guess that the customer does churn. It feels backwards, but this is important to realize when examining all of the given metrics.
 
-- **Accuracy:** The most intuitive, shows how often our models predictions were accurate. Our model had an accuracy of around **.75**, which is roughly the same as our null model. 
+- **Accuracy:** The most intuitive of the metrics, this shows how often our models predictions were correct. Our model had an accuracy of around **.75**, which is roughly the same as our null model. Essentially this means that when our model guesses 'yes' or 'no', 3 out of 4 times it gets the correct answer. It is important to consider any issues with data or methodological decisions that may make accuracy more or less important. In our case, any potential conflicts between stratification and up-sampling may make this metric less reliable. If the stratification over-rides the up-sampling for instance, the 'no' guesses outweigh the 'yes' guesses which can result in a high accuracy despite poor performance on 'yes' predictions.
 
-- **Precision:** This show us our number of true positive with relation to the number of false positives we got. Our model has quite a respectable value at around **.90** which indicates out of all our positive guesses, 90% of them were on the mark. 
+- **Precision:** This show us the number of true positive predictions with relation to the number of false positive predictions the model made. Our model has quite a respectable value at around **.90**. This indicates that when the model predicted that a customer did **NOT** churn, 90% of those predictions were on the mark. 
 
-- **Recall:** This is our true positive rate. A high sensitivity score indicates we had few false negatives and were able to capture almost all of the positive values in the set. Our sensitivity score was around **.74** which indicates the model falsely classified around a quarter of all the genuinely positive values.
+- **Recall:** Also known as **sensitivity**, this is our true positive rate. A high sensitivity score indicates we had few false negatives and were able to capture almost all of the positive values in the set. In our case this would be our models ability to correctly capture as many of the customers who did not churn as possible. Our sensitivity score was around **.74** which indicates the model falsely classified around a quarter of all the **genuinely** positive values. Essentially our model took a quarter of the customers that did not churn and inaccurately predicted that they did.
 
-- **F_meas or F1 Score:** This is the harmonic mean of precision and recall. Essentially it shows the balance between the two metrics in the model. Ours is around **.81** which indicates that, despite their values, the two scores are relatively balanced overall.
+- **F_meas or F1 Score:** This is the harmonic mean of precision and recall. Essentially it shows the balance between the two metrics in the model. This is important because these two metrics have a trade-off, attempting to maximize one will lower the other. Ours is around **.81** which indicates that, despite their values, the two scores are relatively balanced overall and we can observe from the value of precision and recall that this model is preferring **precision** in this specific trade-off.
 
-- **Specificity:** This shows the true negative rate. This shows how well we are at capturing all values that genuinely go against our null hypotheses. In our case this shows how well we catch all the customers who discontinue service. We got around **.79** which is okay, we miss around a fifth of the customers who churn which could use some improvement. 
+- **Specificity:** This shows the true negative rate which indicates how well a model does at capturing all values that genuinely go against our null hypotheses, which in our case is customers that **DO** churn. So, using this metric we can see how well the model catches all the customers who discontinue service. We got around **.79** which is okay, we miss around a fifth of the customers who churn which could use some improvement. 
 
-- **roc_auc:** This the area under the roc curve. This curve has the true positive rate on the y-axis and the false positive rate on the x-axis. The closer to 1 the area under this curve is the better, and our model scores around a **.84** here which is respectable. 
+- **roc_auc:** This the area under the given models roc curve. This curve has the true positive rate (**recall**) on the y-axis and the false positive rate (**1 - specificity**) on the x-axis. The closer to 1 the area under this curve is the better, and our model scores around a **.84** here which is respectable. 
 
-From the confusion matrix we can the inaccuracy of our model clearly. This model handles the 'no' prediction fine, but is basically a coin flip when it comes to the 'yes' prediction. Getting that resolved would go a long way to improving the models performance overall. 
+```{r}
+# Confusion matrix for re-samples ----
+log_reg_resamples %>%
+    conf_mat_resampled()
+```
+
+From the **confusion matrix** we can the inaccuracy of our model clearly. This model handles the 'no' prediction fine, but is basically a coin flip when it comes to the 'yes' prediction. Getting that resolved would go a long way to improving the models performance overall. 
 
 Let us re-run these computations using 10-fold cross validation instead! We see pretty similar numbers to the bootstrapping method we utilized. 
 
@@ -262,9 +264,7 @@ cv_log_reg_res %>%
     conf_mat_resampled()
 ```
 
-From here I got a bit lost on where to go. It took me far longer than I would care to admit to learn that there isn't much to tune with logistic models. I read and re-read chapters and was left scratching my head. I got frustrated and never ended up using this model on the test set. I decided instead of spinning my wheels I could use a model that I could use to learn tuning, which is when I dove right into **random forests**.
-
-One last thing to look at is our ROC Curve. It simply shows us how our model performs 
+From here I got a bit lost on where to go. It took me far longer than I would care to admit to learn that there isn't much to tune with logistic models. I read and re-read chapters and was left scratching my head. I got frustrated and never ended up using this model on the test set. I decided instead of spinning my wheels I should try a model that could help me learn tuning, which is when I dove right into **random forests**.
 
 # Random Forests using Ranger
 
@@ -338,7 +338,7 @@ tree_results %>%
     scale_color_viridis_d(option = "plasma", begin = .9, end = 0)
 ```
 
-![](images/metric_comparison_plot.png)
+![](../images/metric_comparison_plot.png)
 
 This plot shows us quite the interesting story. It seems that an `mtry` of 5 is ideal for balancing out all the different metrics here. It's important to note the free scale here. `roc_auc` appears to be tanking, but barely budges more than .01 in value. `specificity` meanwhile genuinely tanks the more `mtry` increases. With an `mtry` of 5 we maximize our F1 score and accuracy while scoring a nice middle ground for `roc_auc`. The only way to maximize `specificity` is to set `mtry` to 1, which feels like a terrible idea. `mtry` dictates the number of predictor columns that are sampled, and with a data set that has 19 predictors, sampling only 1 feels like I'm asking for misleading information. It is also of note that the different tree values vary little in their metrics with 50 being solidly the worst of the three. 175 seems to be a solid choice. 
 
@@ -393,7 +393,7 @@ final_fit %>%
 # 2 roc_auc  binary         0.846 Preprocessor1_Model1
 ```
 
-From here we can see two metrics, `accuracy` and `roc_auc`, both boasting respectable values. I would like to get more metrics from this, but in all honesty how to do this within these final steps escapes me. Had I spent less time using poor values for grid searching maybe I would have been able to wrestle with this more but alas it was not meant to be. We can still draw conclusions though. Looking at the metrics of our best tree we see almost identical metrics for `accuracy` and `roc_auc`. This is great, it shows that our model appears to be a good fit for the data! If we saw drastic differences either way there may be some cause for concern, but we seem to have avoided that problem.
+From here we can see two metrics, `accuracy` and `roc_auc`, both boasting respectable values. I would like to get more metrics from this, but in all honesty how to do this within these final steps escapes me. Had I spent less time using poor values for grid searching maybe I would have been able to wrestle with this more but alas it was not meant to be. We can still draw conclusions though. Looking at the metrics of our best tree we see almost identical metrics for `accuracy` and `roc_auc`. This is great, it shows that our model appears to be a good fit for the data! If we saw large differences it may be a sign of our model over or under fitting the training set. Again, this isn't perfect. I'd like to compare far more metrics to see if there are any drastic differences I'm missing, but that just isn't possible with current time constraints. That will be my top priority when I revisit this. With the limited metrics that we have access too, our model seems to be a good fit. 
 
 There are two other things we can examine as well, a plot of our ROC curve and our variable importance plot.
 
@@ -405,9 +405,9 @@ final_fit %>%
     autoplot()
 ```
 
-![](images/final_roc_curve.png)
+![](../images/final_roc_curve.png)
 
-This curve simply shows us the sensitivity and specificity over different thresholds. In general, if your curve is hovering close to the diagonal line or jumping all over the place, your predictions may be more random than you would like. The ideal ROC curve hangs as close to the top left as possible. Our curve is relatively close to the top left and away from the diagonal line, which indicates our models predictions aren't based entirely on random chance. It's also a relatively smooth line, which is good to see. 
+This curve simply shows us the sensitivity and specificity over different thresholds. In general, if your curve is hovering close to the diagonal line or jumping all over the place, your predictions may be more random than you would like. The ideal ROC curve hangs as close to the top left as possible. Our curve is relatively close to the top left and away from the diagonal line, which indicates our models predictions aren't based entirely on random chance. It's also a relatively smooth line, which is good to see. Ideally, you would want two of these curves. One from the training set and one from the testing set. Comparing `roc_auc` is good, but those values can be similar while having vastly different curves, so being able to compare those differences is useful. That's something I'd like to revisit and add in the future.
 
 ```{r, eval=FALSE}
 
@@ -418,7 +418,7 @@ final_fit %>%
     vip::vip()
 ```
 
-![](images/rf_vip.png)
+![](../images/rf_vip.png)
 
 What we can see from this is that, at least according to how we set up our model, **tenure**, **TotalCharges** and **MonthlyCharges** are the biggest predictors of customer churn. We saw these in our plots earlier on in the report so it is unsurprising to see these as good predictors. I have to wonder if there is more I could potentially do with these predictors to improve the performance of the model.
 
